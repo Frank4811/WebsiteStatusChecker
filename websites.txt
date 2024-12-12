@@ -1,6 +1,5 @@
-https://www.youtube.com
-https://www.google.com
-https://www.rust-lang.org
-https://www.github.com
-https://www.mozilla.org
+https://www.tiktok.com
+https://www.discord.com
+https://www.x.com
 https://www.twitch.com
+https://www.github.com
