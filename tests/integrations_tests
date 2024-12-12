@@ -1,0 +1,69 @@
+use mockito::{mock, Matcher};
+use website_status_checker::checker::checkwebsite;
+
+#[test]
+fn test_checkwebsite_with_mock_server() {
+    // Create a mock server that responds with a 200 status code for a specific URL
+    let _mock = mock("GET", "/mockurl")
+        .with_status(200)
+        .with_body("OK")
+        .create();
+
+    // Use the mock server's URL
+    let mock_url = &mockito::server_url();
+    let test_url = format!("{}/mockurl", mock_url);
+
+    // Call the checkwebsite function with the mock URL
+    let result = checkwebsite(&test_url);
+
+    // Assert that the status is OK (200)
+    assert!(result.status.is_ok());
+    if let Ok(status_code) = result.status {
+        assert_eq!(status_code, 200);
+    }
+}
+
+#[test]
+fn test_checkwebsite_with_mock_server_404() {
+    // Create a mock server that responds with a 404 status code for a specific URL
+    let _mock = mock("GET", "/mock404")
+        .with_status(404)
+        .with_body("Not Found")
+        .create();
+
+    // Use the mock server's URL
+    let mock_url = &mockito::server_url();
+    let test_url = format!("{}/mock404", mock_url);
+
+    // Call the checkwebsite function with the mock URL
+    let result = checkwebsite(&test_url);
+
+    // Assert that the status is an error due to the 404 status code
+    assert!(result.status.is_err());
+    if let Err(err) = result.status {
+        assert!(err.contains("HTTP error: 404"));
+    }
+}
+
+#[test]
+fn test_checkwebsite_with_mock_server_timeout() {
+    // Create a mock server that takes a long time to respond (simulate timeout)
+    let _mock = mock("GET", "/timeout")
+        .with_status(200)
+        .with_body("OK")
+        .with_delay(std::time::Duration::from_secs(10)) // Delay the response to simulate a timeout
+        .create();
+
+    // Use the mock server's URL
+    let mock_url = &mockito::server_url();
+    let test_url = format!("{}/timeout", mock_url);
+
+    // Call the checkwebsite function with the mock URL, which should time out
+    let result = checkwebsite(&test_url);
+
+    // Assert that the status is an error (timeout)
+    assert!(result.status.is_err());
+    if let Err(err) = result.status {
+        assert!(err.contains("Request failed"));
+    }
+}

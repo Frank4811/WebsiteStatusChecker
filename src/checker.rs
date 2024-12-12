@@ -11,7 +11,7 @@ pub fn checkwebsite(url: &str) -> WebsiteStatus {
     let mut duration = start.elapsed(); // Initial dummy duration
 
     // Retry logic
-    while retries <= MAX_RETRIES {
+    while retries < MAX_RETRIES {
         let response = ureq::get(url)
             .timeout(std::time::Duration::from_secs(REQUEST_TIMEOUT))
             .call();
@@ -21,7 +21,7 @@ pub fn checkwebsite(url: &str) -> WebsiteStatus {
         status = match response {
             Ok(res) => Ok(res.status()),
             Err(Error::Status(code, _)) => Err(format!("HTTP error: {}", code)),
-            Err(_) => Err("Request failed".to_string()),
+            Err(Error::Transport(_)) => Err("Request timed out".to_string()), // Handle Transport error for timeout
         };
 
         if status.is_ok() {
@@ -29,6 +29,8 @@ pub fn checkwebsite(url: &str) -> WebsiteStatus {
         }
 
         retries += 1;
+        // Optional: Print retry status during debugging
+        println!("Retry {}/{} for URL: {}", retries, MAX_RETRIES, url);
     }
 
     WebsiteStatus {
@@ -37,5 +39,26 @@ pub fn checkwebsite(url: &str) -> WebsiteStatus {
         response_time: duration,
         timestamp: Utc::now(),
         retries,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_checkwebsite_success() {
+        let url = "https://www.example.com";
+        let result = checkwebsite(url);
+        assert_eq!(result.url, url);
+        assert!(result.status.is_ok());
+    }
+
+    #[test]
+    fn test_checkwebsite_failure() {
+        let url = "https://invalid.url";
+        let result = checkwebsite(url);
+        assert_eq!(result.url, url);
+        assert!(result.status.is_err());
     }
 }
