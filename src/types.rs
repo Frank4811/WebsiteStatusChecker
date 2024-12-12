@@ -7,4 +7,5 @@ pub struct WebsiteStatus {
     pub status: Result<u16, String>,
     pub response_time: Duration,
     pub timestamp: DateTime<Utc>,
+    pub retries: usize, 
 }
